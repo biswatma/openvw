@@ -134,7 +134,26 @@ data class Trip(
   val score: Int = 0,
   val epoch: Long = 0,   // trip start, seconds
   val pending: Boolean = false,  // derived from engine on/off; full trip still finalizing on the server
-)
+  val drivingMin: Int = 0,
+  val idleMin: Int = 0,
+  val haltMin: Int = 0,
+  val maxSpeed: Int = 0,
+  val avgSpeed: Int = 0,
+  val startOdo: Double = 0.0,
+  val endOdo: Double = 0.0,
+  val startFuelPct: Int = 0,
+  val endFuelPct: Int = 0,
+  val brakes: Int = 0,
+  val startLat: Double = 0.0,
+  val startLon: Double = 0.0,
+  val endLat: Double = 0.0,
+  val endLon: Double = 0.0,
+) {
+  /** Litres burned, from the fuel-% drop × the Taigun's ~50 L tank (VW only reports percent). */
+  val fuelUsedL: Double get() = (startFuelPct - endFuelPct).coerceAtLeast(0) / 100.0 * 50.0
+  /** Measured mileage for this trip (km/L); 0 = not computable (fuel % didn't change). */
+  val mileage: Double get() = if (fuelUsedL > 0 && km > 0) km / fuelUsedL else 0.0
+}
 
 data class Workshop(val id: String, val name: String, val address: String)
 

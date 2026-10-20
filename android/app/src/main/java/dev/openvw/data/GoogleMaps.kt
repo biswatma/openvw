@@ -18,6 +18,10 @@ object GoogleMaps {
   fun place(ctx: Context, query: String) =
     open(ctx, "https://www.google.com/maps/search/?api=1&query=${enc(query)}")
 
+  /** Route between two coordinates (your trip's start → end). */
+  fun route(ctx: Context, oLat: Double, oLon: Double, dLat: Double, dLon: Double) =
+    open(ctx, "https://www.google.com/maps/dir/?api=1&origin=$oLat,$oLon&destination=$dLat,$dLon&travelmode=driving")
+
   /** Turn-by-turn driving directions to a place. */
   fun directions(ctx: Context, destination: String) =
     open(ctx, "https://www.google.com/maps/dir/?api=1&destination=${enc(destination)}&travelmode=driving")

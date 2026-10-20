@@ -40,7 +40,7 @@ import dev.openvw.theme.Muted
 import dev.openvw.theme.OnDarkMuted
 
 @Composable
-fun TripsScreen(onBack: () -> Unit) {
+fun TripsScreen(onBack: () -> Unit, onOpenTrip: (Trip) -> Unit = {}) {
   var tab by remember { mutableStateOf(0) }
   Column(Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
     BackBar(onBack, showBack = false)
@@ -74,7 +74,7 @@ fun TripsScreen(onBack: () -> Unit) {
       if (pending != null) {
         Text("LATEST DRIVE", style = TextStyle(color = Muted, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.8.sp), modifier = Modifier.padding(start = 20.dp, top = 8.dp, bottom = 10.dp))
         Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp)) {
-          Column(Modifier.card(24.dp).padding(18.dp)) {
+          Column(Modifier.card(24.dp).clickable { onOpenTrip(pending) }.padding(18.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
               Row(verticalAlignment = Alignment.Bottom) {
                 Text(pending.durMin.toString(), style = TextStyle(color = Ink, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold).merge(Tnum))
@@ -98,7 +98,7 @@ fun TripsScreen(onBack: () -> Unit) {
         }
         Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
           trips.forEach { tr ->
-            Column(Modifier.card(24.dp).padding(18.dp)) {
+            Column(Modifier.card(24.dp).clickable { onOpenTrip(tr) }.padding(18.dp)) {
               Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.Bottom) {
                   Text(tr.durMin.toString(), style = TextStyle(color = Ink, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold).merge(Tnum))

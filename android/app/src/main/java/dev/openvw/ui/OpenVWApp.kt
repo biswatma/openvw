@@ -117,6 +117,8 @@ private fun MainApp(vm: AppViewModel) {
     if (stack.last().first == Screen.HOME) playKey++
   }
 
+  fun openTrip(t: dev.openvw.data.Trip) { dev.openvw.data.Store.detailTrip = t; open(Screen.TRIP_DETAIL) }
+
   BackHandler(enabled = stack.size > 1) { back() }
 
   // wide windows (foldable inner screen, tablets, landscape): side rail + width-limited content
@@ -145,8 +147,9 @@ private fun MainApp(vm: AppViewModel) {
                   playKey = playKey,
                   onShown = { vm.refreshTelematics() },
                   wide = twoCol,
+                  onOpenTrip = ::openTrip,
                 )
-                Screen.TRIPS -> TripsScreen(onBack = ::back)
+                Screen.TRIPS -> TripsScreen(onBack = ::back, onOpenTrip = ::openTrip)
                 Screen.LOCATE -> LocateScreen(onBack = ::back)
                 Screen.ALERTS -> AlertsScreen(onBack = ::back)
                 Screen.VEHICLE -> VehicleScreen(
@@ -158,6 +161,7 @@ private fun MainApp(vm: AppViewModel) {
                   onPrice = { vm.setFuelPrice(it) },
                   onDark = { vm.setDark(it) },
                 )
+                Screen.TRIP_DETAIL -> TripDetailScreen(dev.openvw.data.Store.detailTrip, onBack = ::back)
               }
             }
           }

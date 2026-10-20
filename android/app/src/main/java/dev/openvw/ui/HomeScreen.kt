@@ -65,7 +65,7 @@ import dev.openvw.theme.Field
 import kotlin.math.roundToInt
 
 @Composable
-fun HomeScreen(onGo: (Screen) -> Unit, onOwner: () -> Unit, playKey: Int, onShown: () -> Unit = {}, wide: Boolean = false) {
+fun HomeScreen(onGo: (Screen) -> Unit, onOwner: () -> Unit, playKey: Int, onShown: () -> Unit = {}, wide: Boolean = false, onOpenTrip: (dev.openvw.data.Trip) -> Unit = {}) {
   val tele = Store.telemetry
   val v = Store.vehicle
 
@@ -214,7 +214,7 @@ fun HomeScreen(onGo: (Screen) -> Unit, onOwner: () -> Unit, playKey: Int, onShow
         VIcon(Ic.chevronR, size = 16.dp, color = Ink, stroke = 2f)
       }
     }
-    listOfNotNull(Store.trips.firstOrNull(), Store.pendingDrive).maxByOrNull { it.epoch }?.let { tr -> Column(Modifier.padding(horizontal = 16.dp).card(24.dp).padding(18.dp)) {
+    listOfNotNull(Store.trips.firstOrNull(), Store.pendingDrive).maxByOrNull { it.epoch }?.let { tr -> Column(Modifier.padding(horizontal = 16.dp).card(24.dp).clickable { onOpenTrip(tr) }.padding(18.dp)) {
       Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Row(verticalAlignment = Alignment.Bottom) {
           Text(tr.durMin.toString(), style = TextStyle(color = Ink, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold).merge(Tnum))

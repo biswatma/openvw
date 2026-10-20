@@ -433,6 +433,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
           fromTitle = fT, fromSub = fS, toTitle = tT, toSub = tS,
           durMin = min, type = tr.optJSONArray("tags")?.optString(0)?.ifEmpty { null } ?: "Personal",
           date = day(st), km = km, score = tr.optInt("driverScore"), epoch = st,
+          drivingMin = tr.optInt("drivingTime"), idleMin = tr.optInt("idleTime"), haltMin = tr.optInt("haltTime"),
+          maxSpeed = tr.optInt("maxSpeed"), avgSpeed = tr.optInt("speed"),
+          startOdo = tr.optJSONObject("startOdometer")?.optDouble("value") ?: 0.0,
+          endOdo = tr.optJSONObject("endOdometer")?.optDouble("value") ?: 0.0,
+          startFuelPct = sf.toInt(), endFuelPct = ef.toInt(),
+          brakes = tr.optJSONObject("eventCount")?.optInt("sudden brake") ?: 0,
+          startLat = sl?.optDouble("latitude") ?: 0.0, startLon = sl?.optDouble("longitude") ?: 0.0,
+          endLat = el?.optDouble("latitude") ?: 0.0, endLon = el?.optDouble("longitude") ?: 0.0,
         )
       }
       list.sortByDescending { it.epoch }
