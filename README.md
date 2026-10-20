@@ -4,7 +4,7 @@ An open, privacy-respecting alternative client for **My Volkswagen Connect Plus*
 
 > Unofficial project. Not made by, affiliated with, or endorsed by Volkswagen. Use at your own risk. See [Disclaimer](#disclaimer).
 
-<img src="docs/home.png" width="260" alt="Home screen"> <img src="docs/cluster.png" width="260" alt="Live cluster">
+![OpenVW](docs/banner.png)
 
 ## Features
 
