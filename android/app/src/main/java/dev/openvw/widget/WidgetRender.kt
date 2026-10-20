@@ -216,7 +216,7 @@ object WidgetRender {
     c.drawText(fit(s.tripTo, pp, right - tx), tx, row2 + 11.5f * u, pp)
   }
 
-  private fun carImage(ctx: Context, s: WidgetSnapshot) = BitmapFactory.decodeResource(ctx.resources, dev.openvw.data.CarLook.image(s.colour))
+  private fun carImage(ctx: Context, s: WidgetSnapshot) = BitmapFactory.decodeResource(ctx.resources, dev.openvw.data.CarLook.image(s.colour, s.variant))
 
   // ---------- LARGE (4x4) ----------
   fun large(ctx: Context, w: Int, h: Int, s: WidgetSnapshot): Bitmap {
@@ -395,7 +395,7 @@ object WidgetRender {
 
     // inline line
     icon(c, CAR, L, T, 15f * u, WHITE, 2f * 15f / 24f * u)
-    c.drawText(fit("Taigun · ${s.status} · ${s.fuelPct}% fuel", text(14f * u, medium, 0xD9FFFFFF.toInt()), card.right - L - 40f * u),
+    c.drawText(fit("${dev.openvw.data.CarLook.name(s.variant)} · ${s.status} · ${s.fuelPct}% fuel", text(14f * u, medium, 0xD9FFFFFF.toInt()), card.right - L - 40f * u),
       L + 21f * u, T + 12.5f * u, text(14f * u, medium, 0xD9FFFFFF.toInt()))
 
     // three circular complications

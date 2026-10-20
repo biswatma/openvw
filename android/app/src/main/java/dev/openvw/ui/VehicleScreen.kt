@@ -73,7 +73,7 @@ fun VehicleScreen(
     if (tab == VehicleTab.VEHICLE) {
       Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp).fillMaxWidth().height(200.dp).card(28.dp)) {
         Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp).fillMaxWidth(0.72f).height(16.dp).background(Color(0x22101010), RoundedCornerShape(50)))
-        Image(painterResource(CarLook.image(Store.vehicle.colour)), "Your Taigun GT Plus", Modifier.align(Alignment.Center).fillMaxWidth(0.86f).fillMaxHeight(0.9f), contentScale = ContentScale.Fit)
+        Image(painterResource(CarLook.image(Store.vehicle.colour)), "Your ${Store.vehicle.variant}", Modifier.align(Alignment.Center).fillMaxWidth(0.86f).fillMaxHeight(0.9f), contentScale = ContentScale.Fit)
       }
       // car colour: follow the account, or pick manually
       ColourPicker(Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp), onPaint)
@@ -126,7 +126,7 @@ fun VehicleScreen(
         Spacer(Modifier.width(16.dp))
         Column {
           Text(Mask.name(Store.owner.proper), style = TextStyle(color = Card, fontSize = 20.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp))
-          Text("PRIMARY OWNER · TAIGUN GT PLUS", style = TextStyle(color = OnDarkMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp))
+          Text("PRIMARY OWNER · ${Store.vehicle.variant.uppercase()}", style = TextStyle(color = OnDarkMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp))
         }
       }
       Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp).card(24.dp).padding(horizontal = 18.dp)) {
@@ -187,14 +187,15 @@ private fun ColourPicker(modifier: Modifier, onPaint: (String) -> Unit) {
       )
     }
     Spacer(Modifier.height(12.dp))
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+    val few = CarLook.paints().size < 4
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = if (few) Arrangement.spacedBy(12.dp) else Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
       // "Auto" follows the colour on the account
       Box(
         Modifier.height(34.dp).clip(RoundedCornerShape(99.dp)).background(if (pick.isEmpty()) Ink else Card)
           .border(1.dp, if (pick.isEmpty()) Ink else Border, RoundedCornerShape(99.dp)).clickable { onPaint("") }.padding(horizontal = 14.dp),
         contentAlignment = Alignment.Center,
       ) { Text("Auto", style = TextStyle(color = if (pick.isEmpty()) Card else Ink, fontSize = 13.sp, fontWeight = FontWeight.Bold)) }
-      CarLook.Paint.entries.forEach { p ->
+      CarLook.paints().forEach { p ->
         val sel = pick == p.name
         Box(
           Modifier.size(34.dp).clip(RoundedCornerShape(17.dp)).border(2.dp, if (sel) Ink else Color.Transparent, RoundedCornerShape(17.dp))

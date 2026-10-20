@@ -73,7 +73,7 @@ fun LocateScreen(onBack: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
       ) {
         Column(Modifier.weight(1f, fill = false)) {
-          Text("Your Taigun", style = TextStyle(color = Ink, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold))
+          Text("Your ${dev.openvw.data.CarLook.name()}", style = TextStyle(color = Ink, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold))
           Text(Store.parked.title, maxLines = 1, style = TextStyle(color = Muted, fontSize = 11.sp))
         }
         Spacer(Modifier.width(10.dp))

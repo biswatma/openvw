@@ -141,7 +141,7 @@ fun HomeScreen(onGo: (Screen) -> Unit, onOwner: () -> Unit, playKey: Int, onShow
             }
           }
           Image(
-            painterResource(CarLook.image(v.colour)), contentDescription = "Taigun GT Plus",
+            painterResource(CarLook.image(v.colour)), contentDescription = v.variant,
             // fixed box, image fitted inside: renders with different proportions (white/black/red) all stay below the VIN line
             Modifier.align(Alignment.BottomStart).offset(x = (-6).dp).padding(bottom = 6.dp).requiredSize(minOf(168.dp, maxWidth + 8.dp), 98.dp),
             contentScale = ContentScale.Fit, alignment = Alignment.BottomCenter,

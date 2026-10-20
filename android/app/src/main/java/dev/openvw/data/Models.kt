@@ -57,7 +57,7 @@ data class Parked(
 /** Geofences + which alert triggers are switched on (Cerence /policies). */
 data class AlertSetup(val fences: List<String> = emptyList(), val triggers: List<String> = emptyList())
 
-/** Which Taigun render matches the paint name from the account (or the owner's manual pick). */
+/** Which car render matches the model + paint name from the account (or the owner's manual pick). */
 object CarLook {
   enum class Paint(val label: String, val swatch: Long) {
     WHITE("White", 0xFFF4F4F2), BLACK("Black", 0xFF16161A), GREY("Grey", 0xFF5B6B78), RED("Red", 0xFFC8102E), BLUE("Blue", 0xFF1F7FD8), YELLOW("Yellow", 0xFFF2C200),
@@ -72,23 +72,46 @@ object CarLook {
     Regex("yellow|curcuma") to Paint.YELLOW,
   )
 
+  private fun current() = Store.vehicle.variant + " " + Store.vehicle.model
+
+  /** True when the account's variant/model string names a Virtus. */
+  fun isVirtus(model: String = current()) = model.contains("virtus", ignoreCase = true)
+
+  /** Short model name for labels: "Virtus" or "Taigun". */
+  fun name(model: String = current()) = if (isVirtus(model)) "Virtus" else "Taigun"
+
+  /** Paints we have renders for, per model. */
+  fun paints(model: String = current()): List<Paint> =
+    if (isVirtus(model)) listOf(Paint.WHITE, Paint.BLACK, Paint.RED) else Paint.entries
+
+  /** Fallback when the account colour has no matching render: Virtus → Black, Taigun → White. */
+  private fun fallback(model: String) = if (isVirtus(model)) Paint.BLACK else Paint.WHITE
+
   /** The first colour word wins: "Candy White Deep/Black" is a white car with a black roof. */
-  fun paint(colour: String): Paint {
+  fun paint(colour: String, model: String = current()): Paint {
     val c = colour.lowercase()
-    return words.mapNotNull { (re, p) -> re.find(c)?.let { it.range.first to p } }.minByOrNull { it.first }?.second ?: Paint.WHITE
+    val p = words.mapNotNull { (re, p) -> re.find(c)?.let { it.range.first to p } }.minByOrNull { it.first }?.second
+    return p?.takeIf { it in paints(model) } ?: fallback(model)
   }
 
   /** Paint to show: the owner's manual pick (Store.paintPick, a Paint name) wins over the account colour. */
-  fun effective(colour: String): Paint =
-    Paint.entries.firstOrNull { it.name == Store.paintPick } ?: paint(colour)
+  fun effective(colour: String, model: String = current()): Paint =
+    paints(model).firstOrNull { it.name == Store.paintPick } ?: paint(colour, model)
 
-  fun image(colour: String) = when (effective(colour)) {
-    Paint.WHITE -> dev.openvw.R.drawable.taigun_hero
-    Paint.BLACK -> dev.openvw.R.drawable.taigun_hero_black
-    Paint.GREY -> dev.openvw.R.drawable.taigun_hero_grey
-    Paint.RED -> dev.openvw.R.drawable.taigun_hero_red
-    Paint.BLUE -> dev.openvw.R.drawable.taigun_hero_blue
-    Paint.YELLOW -> dev.openvw.R.drawable.taigun_hero_yellow
+  fun image(colour: String, model: String = current()): Int {
+    val p = effective(colour, model)
+    return if (isVirtus(model)) when (p) {
+      Paint.WHITE -> dev.openvw.R.drawable.virtus_hero_white
+      Paint.RED -> dev.openvw.R.drawable.virtus_hero_red
+      else -> dev.openvw.R.drawable.virtus_hero_black
+    } else when (p) {
+      Paint.WHITE -> dev.openvw.R.drawable.taigun_hero
+      Paint.BLACK -> dev.openvw.R.drawable.taigun_hero_black
+      Paint.GREY -> dev.openvw.R.drawable.taigun_hero_grey
+      Paint.RED -> dev.openvw.R.drawable.taigun_hero_red
+      Paint.BLUE -> dev.openvw.R.drawable.taigun_hero_blue
+      Paint.YELLOW -> dev.openvw.R.drawable.taigun_hero_yellow
+    }
   }
 }
 
