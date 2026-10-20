@@ -6,6 +6,14 @@ An open, privacy-respecting alternative client for **My Volkswagen Connect Plus*
 
 ![OpenVW](docs/banner.png)
 
+[![Latest release](https://img.shields.io/github/v/release/biswatma/openvw?label=download&sort=semver)](https://github.com/biswatma/openvw/releases/latest) [![Downloads](https://img.shields.io/github/downloads/biswatma/openvw/total)](https://github.com/biswatma/openvw/releases)
+
+## Download
+
+**[⬇️ Download the latest APK](https://github.com/biswatma/openvw/releases/latest)** — or grab a specific build from [Releases](https://github.com/biswatma/openvw/releases).
+
+Install it, allow "install from unknown sources" when asked, open the app, and sign in with your My Volkswagen Connect Plus mobile number + the OTP you get by SMS. Requires Android 7+.
+
 ## Features
 
 **Live data**
