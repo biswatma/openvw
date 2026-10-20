@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">OpenVW</string>
+    <string name="widget_fuel_desc">Fuel level at a glance</string>
+    <string name="widget_overview_desc">Taigun overview — fuel, battery &amp; last trip</string>
+    <string name="widget_large_desc">Taigun dashboard — fuel, battery, range &amp; last trip</string>
+    <string name="widget_trip_desc">Your last trip — time, distance &amp; route</string>
+    <string name="widget_parked_desc">Where your car is parked</string>
+    <string name="widget_lock_desc">Dark glance — fuel &amp; battery gauges</string>
+</resources>

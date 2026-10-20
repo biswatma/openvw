@@ -1,0 +1,17 @@
+# APKs: the official My Volkswagen APK (third-party, copyrighted) and build outputs
+*.apk
+*.aab
+
+# Live session tokens for the Node bridge
+client/.session.json
+node_modules/
+
+# Android / Gradle
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+*.iml
+.DS_Store
