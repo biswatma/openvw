@@ -125,8 +125,10 @@ object Api {
     json(text).put("_status", code)
   }
 
-  suspend fun trips(carId: String, teleToken: String): JSONObject = withContext(Dispatchers.IO) {
-    val (code, text) = req("GET", "$CERENCE/api/v1/car/$carId/trips?limit=50", null, "Bearer $teleToken")
+  /** Trips; with [start]/[end] (epoch seconds) only that window — the server caps one query at 30 days. */
+  suspend fun trips(carId: String, teleToken: String, start: Long? = null, end: Long? = null): JSONObject = withContext(Dispatchers.IO) {
+    val q = if (start != null && end != null) "limit=200&start_date=$start&end_date=$end" else "limit=50"
+    val (code, text) = req("GET", "$CERENCE/api/v1/car/$carId/trips?$q", null, "Bearer $teleToken")
     json(text).put("_status", code)
   }
 

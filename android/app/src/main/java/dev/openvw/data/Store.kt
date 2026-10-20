@@ -21,6 +21,10 @@ object Store {
   val parkedKnown get() = parked.epoch > 0L   // false until a real telematics event sets the location
   var pendingDrive by mutableStateOf<Trip?>(null)  // last drive from engine on/off, until the full trip finalizes
   var detailTrip by mutableStateOf<Trip?>(null)    // trip shown on the detail page
+  var tripRange by mutableStateOf<Pair<Long, Long>?>(null) // date filter on Trips (start/end day, epoch ms); null = latest trips
+  var tripResults by mutableStateOf(emptyList<Trip>())     // trips found for tripRange
+  var tripSearching by mutableStateOf(false)
+  var tripSearchError by mutableStateOf<String?>(null)
   var alertSetup by mutableStateOf(AlertSetup())
   var paintPick by mutableStateOf("")         // "" = from account colour, else a CarLook.Paint name
   var fuelPrice by mutableStateOf(0.0)        // ₹/L entered by the owner; 0 = default (Bengaluru)

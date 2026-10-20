@@ -149,7 +149,11 @@ private fun MainApp(vm: AppViewModel) {
                   wide = twoCol,
                   onOpenTrip = ::openTrip,
                 )
-                Screen.TRIPS -> TripsScreen(onBack = ::back, onOpenTrip = ::openTrip)
+                Screen.TRIPS -> TripsScreen(
+                  onBack = ::back, onOpenTrip = ::openTrip,
+                  onSearch = { a, b -> vm.searchTrips(a, b) },
+                  onClearSearch = { vm.clearTripSearch() },
+                )
                 Screen.LOCATE -> LocateScreen(onBack = ::back)
                 Screen.ALERTS -> AlertsScreen(onBack = ::back)
                 Screen.VEHICLE -> VehicleScreen(

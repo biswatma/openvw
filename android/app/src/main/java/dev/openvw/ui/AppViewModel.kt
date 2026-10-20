@@ -61,6 +61,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
   private var liveJob: Job? = null
   private var lastGeo: Pair<Double, Double>? = null
   private var pollQueued = false
+  private var searchJob: Job? = null
 
   init {
     phone = session.mobile
@@ -419,29 +420,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         totKm += km; totMin += min
         if (st >= weekAgo) { wTrips++; wKm += km; wMin += min }
 
-        val sl = tr.optJSONObject("startLocation"); val el = tr.optJSONObject("endLocation")
-        suspend fun place(l: org.json.JSONObject?): Pair<String, String> {
-          if (l == null) return "Unknown" to ""
-          val lat = l.optDouble("latitude"); val lon = l.optDouble("longitude")
-          // geocode the most recent trips; older ones use the cache or raw coordinates
-          return if (list.size < 10) withContext(Dispatchers.IO) { Places.lookup(ctx, lat, lon) }
-          else Places.cached(ctx, lat, lon) ?: (Places.coords(lat, lon) to "")
-        }
-        val (fT, fS) = place(sl); val (tT, tS) = place(el)
-        list += Trip(
-          id = tr.optString("id"), start = clock(st), end = clock(et),
-          fromTitle = fT, fromSub = fS, toTitle = tT, toSub = tS,
-          durMin = min, type = tr.optJSONArray("tags")?.optString(0)?.ifEmpty { null } ?: "Personal",
-          date = day(st), km = km, score = tr.optInt("driverScore"), epoch = st, endEpoch = et,
-          drivingMin = tr.optInt("drivingTime"), idleMin = tr.optInt("idleTime"), haltMin = tr.optInt("haltTime"),
-          maxSpeed = tr.optInt("maxSpeed"), avgSpeed = tr.optInt("speed"),
-          startOdo = tr.optJSONObject("startOdometer")?.optDouble("value") ?: 0.0,
-          endOdo = tr.optJSONObject("endOdometer")?.optDouble("value") ?: 0.0,
-          startFuelPct = sf.toInt(), endFuelPct = ef.toInt(),
-          brakes = tr.optJSONObject("eventCount")?.optInt("sudden brake") ?: 0,
-          startLat = sl?.optDouble("latitude") ?: 0.0, startLon = sl?.optDouble("longitude") ?: 0.0,
-          endLat = el?.optDouble("latitude") ?: 0.0, endLon = el?.optDouble("longitude") ?: 0.0,
-        )
+        // geocode the most recent trips; older ones use the cache or raw coordinates
+        list += toTrip(tr, geocode = list.size < 10)
       }
       list.sortByDescending { it.epoch }
       Store.trips = list
@@ -508,6 +488,99 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     )
   }
 
+  /** One Cerence trip JSON -> Trip. [geocode] = look up place names; otherwise cache or raw coordinates. */
+  private suspend fun toTrip(tr: JSONObject, geocode: Boolean): Trip {
+    val ctx = getApplication<Application>()
+    val odoKm = (tr.optJSONObject("endOdometer")?.optDouble("value") ?: 0.0) - (tr.optJSONObject("startOdometer")?.optDouble("value") ?: 0.0)
+    val sf = tr.optJSONObject("startFuelLevel")?.optDouble("value") ?: 0.0
+    val ef = tr.optJSONObject("endFuelLevel")?.optDouble("value") ?: 0.0
+    val st = tr.optLong("startTime"); val et = tr.optLong("endTime")
+    val km = tr.optDouble("distance", 0.0).let { if (it > 0) it / 1000.0 else odoKm }
+    val min = (((et - st) + 30) / 60).toInt().coerceAtLeast(0)
+    val sl = tr.optJSONObject("startLocation"); val el = tr.optJSONObject("endLocation")
+    suspend fun place(l: JSONObject?): Pair<String, String> {
+      if (l == null) return "Unknown" to ""
+      val lat = l.optDouble("latitude"); val lon = l.optDouble("longitude")
+      return if (geocode) withContext(Dispatchers.IO) { Places.lookup(ctx, lat, lon) }
+      else Places.cached(ctx, lat, lon) ?: (Places.coords(lat, lon) to "")
+    }
+    val (fT, fS) = place(sl); val (tT, tS) = place(el)
+    return Trip(
+      id = tr.optString("id"), start = clock(st), end = clock(et),
+      fromTitle = fT, fromSub = fS, toTitle = tT, toSub = tS,
+      durMin = min, type = tr.optJSONArray("tags")?.optString(0)?.ifEmpty { null } ?: "Personal",
+      date = day(st), km = km, score = tr.optInt("driverScore"), epoch = st, endEpoch = et,
+      drivingMin = tr.optInt("drivingTime"), idleMin = tr.optInt("idleTime"), haltMin = tr.optInt("haltTime"),
+      maxSpeed = tr.optInt("maxSpeed"), avgSpeed = tr.optInt("speed"),
+      startOdo = tr.optJSONObject("startOdometer")?.optDouble("value") ?: 0.0,
+      endOdo = tr.optJSONObject("endOdometer")?.optDouble("value") ?: 0.0,
+      startFuelPct = sf.toInt(), endFuelPct = ef.toInt(),
+      brakes = tr.optJSONObject("eventCount")?.optInt("sudden brake") ?: 0,
+      startLat = sl?.optDouble("latitude") ?: 0.0, startLon = sl?.optDouble("longitude") ?: 0.0,
+      endLat = el?.optDouble("latitude") ?: 0.0, endLon = el?.optDouble("longitude") ?: 0.0,
+    )
+  }
+
+  /**
+   * Trips between two picked days. [startMs]/[endMs] are the date picker's values (UTC midnight of
+   * each day); the whole local days are searched. Cerence allows max 30 days per query, so longer
+   * ranges are fetched window by window and merged.
+   */
+  fun searchTrips(startMs: Long, endMs: Long) {
+    val range = startMs to endMs
+    searchJob?.cancel()
+    Store.tripRange = range; Store.tripResults = emptyList(); Store.tripSearchError = null; Store.tripSearching = true
+    searchJob = viewModelScope.launch {
+      try {
+        if (session.carId.isEmpty() || session.teleToken.isEmpty()) loadLock.withLock { loadTelematics(full = false) }
+        if (session.carId.isEmpty() || session.teleToken.isEmpty()) throw Exception("Couldn't reach your car right now")
+        val from = localDayStart(startMs); val to = localDayStart(endMs) + 86_399
+        val found = LinkedHashMap<String, JSONObject>()
+        var a = from
+        while (a <= to) {
+          val b = minOf(a + MAX_WINDOW - 1, to)
+          var r = Api.trips(session.carId, session.teleToken, a, b)
+          if (r.optInt("_status") == 401) { // token expired: re-mint once
+            session.teleToken = ""; loadLock.withLock { loadTelematics(full = false) }
+            r = Api.trips(session.carId, session.teleToken, a, b)
+          }
+          val arr = r.optJSONArray("trips")
+          if (arr == null && r.has("message")) throw Exception(r.optString("message"))
+          if (arr != null) for (i in 0 until arr.length()) arr.optJSONObject(i)?.let { found[it.optString("id").ifEmpty { "t${it.optLong("startTime")}" }] = it }
+          a = b + 1
+        }
+        val sorted = found.values.filter { it.optLong("startTime") in from..to }.sortedByDescending { it.optLong("startTime") }
+        // show right away with cached names, then fill in real place names
+        Store.tripResults = sorted.map { toTrip(it, geocode = false) }
+        Store.tripSearching = false
+        if (sorted.isNotEmpty()) Store.tripResults = sorted.mapIndexed { i, j -> toTrip(j, geocode = i < 40) }
+      } catch (e: kotlinx.coroutines.CancellationException) { throw e
+      } catch (e: Exception) {
+        Store.tripSearchError = e.message ?: "Couldn't load trips"
+      } finally {
+        if (Store.tripRange == range) Store.tripSearching = false
+      }
+    }
+  }
+
+  fun clearTripSearch() {
+    searchJob?.cancel(); searchJob = null
+    Store.tripRange = null; Store.tripResults = emptyList(); Store.tripSearching = false; Store.tripSearchError = null
+  }
+
+  /** Date-picker value (UTC midnight of a calendar day) -> that day's local midnight, epoch seconds. */
+  private fun localDayStart(utcMs: Long): Long {
+    val u = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply { timeInMillis = utcMs }
+    val l = java.util.Calendar.getInstance().apply {
+      clear(); set(u.get(java.util.Calendar.YEAR), u.get(java.util.Calendar.MONTH), u.get(java.util.Calendar.DAY_OF_MONTH))
+    }
+    return l.timeInMillis / 1000
+  }
+
   private fun clock(epoch: Long) = SimpleDateFormat("hh:mm a", Locale.ENGLISH).format(Date(epoch * 1000))
   private fun day(epoch: Long) = SimpleDateFormat("d MMM", Locale.ENGLISH).format(Date(epoch * 1000))
+
+  private companion object {
+    const val MAX_WINDOW = 2_592_000L // Cerence: "The max query time range is 2592000" (30 days)
+  }
 }
