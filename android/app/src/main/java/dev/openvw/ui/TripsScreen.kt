@@ -51,7 +51,16 @@ fun TripsScreen(onBack: () -> Unit) {
     }
 
     val d = Store.drive
-    if (tab == 0) {
+    if (tab == 0 && Store.trips.isEmpty()) {
+      Column(Modifier.fillMaxWidth().padding(top = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.size(92.dp).clip(RoundedCornerShape(46.dp)).background(Card).border(1.dp, Border, RoundedCornerShape(46.dp)), contentAlignment = Alignment.Center) {
+          VIcon(Ic.route + " M4 19a2 2 0 1 0 4 0 2 2 0 1 0-4 0z M16 5a2 2 0 1 0 4 0 2 2 0 1 0-4 0z", size = 40.dp, color = Ink, stroke = 1.4f)
+        }
+        Spacer(Modifier.height(12.dp))
+        Text("No trips yet", style = TextStyle(color = Ink, fontSize = 22.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.6).sp))
+        Text("Your trips show up here after you drive.", style = TextStyle(color = Muted, fontSize = 14.sp))
+      }
+    } else if (tab == 0) {
       val live = d.tripCount > 0
       Row(
         Modifier.padding(16.dp).fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Ink).padding(18.dp),

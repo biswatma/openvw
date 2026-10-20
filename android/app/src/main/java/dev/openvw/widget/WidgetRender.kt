@@ -372,7 +372,7 @@ object WidgetRender {
     val cw = maxOf(t1.measureText("Last parked here"), t2.measureText(line2), t2.measureText(l3)).coerceAtMost(maxW) + 24f * u
     val chip = RectF(card.left + 14f * u, card.top + 14f * u, card.left + 14f * u + cw, card.top + 14f * u + 56f * u)
     c.drawRoundRect(chip, 14f * u, 14f * u, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = WHITE; setShadowLayer(7f * u, 0f, 6f * u, 0x300E0E10) })
-    c.drawText("Last parked here", chip.left + 12f * u, chip.top + 20f * u, t1)
+    c.drawText(if (s.parkTitle.isEmpty()) "No location yet" else "Last parked here", chip.left + 12f * u, chip.top + 20f * u, t1)
     c.drawText(fit(line2, t2, maxW), chip.left + 12f * u, chip.top + 34f * u, t2)
     c.drawText(l3, chip.left + 12f * u, chip.top + 47f * u, t2)
 

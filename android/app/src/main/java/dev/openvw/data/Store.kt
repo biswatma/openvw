@@ -9,7 +9,7 @@ object Store {
   var vehicle by mutableStateOf(Repo.vehicle)
   var telemetry by mutableStateOf(Repo.telemetry)
   var owner by mutableStateOf(Repo.owner)
-  var trips by mutableStateOf(Repo.trips)
+  var trips by mutableStateOf(emptyList<Trip>())  // real trips only; empty until live data loads
   var live by mutableStateOf(false)           // true once real telemetry arrived
   var liveConnected by mutableStateOf(false)  // SignalR push feed is connected
   var privacy by mutableStateOf(false)        // mask VIN / reg / personal info with mimic data
@@ -18,6 +18,7 @@ object Store {
   var drive by mutableStateOf(DriveStats())
   var events by mutableStateOf(emptyList<CarEvent>())
   var parked by mutableStateOf(Parked())
+  val parkedKnown get() = parked.epoch > 0L   // false until a real telematics event sets the location
   var alertSetup by mutableStateOf(AlertSetup())
   var paintPick by mutableStateOf("")         // "" = from account colour, else a CarLook.Paint name
   var fuelPrice by mutableStateOf(0.0)        // ₹/L entered by the owner; 0 = default (Bengaluru)

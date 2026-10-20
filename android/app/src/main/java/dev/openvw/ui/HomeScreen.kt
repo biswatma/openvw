@@ -233,16 +233,25 @@ fun HomeScreen(onGo: (Screen) -> Unit, onOwner: () -> Unit, playKey: Int, onShow
     // map
     Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp).fillMaxWidth().height(200.dp).clip(RoundedCornerShape(24.dp)).background(MapBg).border(1.dp, dev.openvw.theme.Hairline, RoundedCornerShape(24.dp))) {
       val park = Store.parked
-      OsmMap(park.lat, park.lon, Modifier.matchParentSize(), zoom = 15.0, interactive = false, showMarker = false, mode = mapMode)
-      MapModeToggle(mapMode, Modifier.align(Alignment.TopEnd).padding(10.dp)) { mapMode = it }
-      Box(Modifier.align(Alignment.TopStart).padding(12.dp).clip(RoundedCornerShape(10.dp)).background(Card).padding(horizontal = 10.dp, vertical = 6.dp)) {
-        Column {
-          Text("Last parked here", style = TextStyle(color = Ink, fontSize = 11.sp, fontWeight = FontWeight.Bold))
-          Text(park.title, maxLines = 1, style = TextStyle(color = Muted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold), modifier = Modifier.width(140.dp))
+      if (Store.parkedKnown) {
+        OsmMap(park.lat, park.lon, Modifier.matchParentSize(), zoom = 15.0, interactive = false, showMarker = false, mode = mapMode)
+        MapModeToggle(mapMode, Modifier.align(Alignment.TopEnd).padding(10.dp)) { mapMode = it }
+        Box(Modifier.align(Alignment.TopStart).padding(12.dp).clip(RoundedCornerShape(10.dp)).background(Card).padding(horizontal = 10.dp, vertical = 6.dp)) {
+          Column {
+            Text("Last parked here", style = TextStyle(color = Ink, fontSize = 11.sp, fontWeight = FontWeight.Bold))
+            Text(park.title, maxLines = 1, style = TextStyle(color = Muted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold), modifier = Modifier.width(140.dp))
+          }
         }
-      }
-      Box(Modifier.align(Alignment.Center).size(36.dp).clip(RoundedCornerShape(18.dp)).background(Ink).border(4.dp, Card, RoundedCornerShape(18.dp)), contentAlignment = Alignment.Center) {
-        VIcon(Ic.car, size = 20.dp, color = Card, stroke = 1.9f)
+        Box(Modifier.align(Alignment.Center).size(36.dp).clip(RoundedCornerShape(18.dp)).background(Ink).border(4.dp, Card, RoundedCornerShape(18.dp)), contentAlignment = Alignment.Center) {
+          VIcon(Ic.car, size = 20.dp, color = Card, stroke = 1.9f)
+        }
+      } else {
+        // no real location yet — don't show a placeholder city
+        Column(Modifier.align(Alignment.Center).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+          VIcon(Ic.pin, size = 26.dp, color = Muted, stroke = 1.8f)
+          Spacer(Modifier.height(8.dp))
+          Text("Location appears after your next drive", style = TextStyle(color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
+        }
       }
       DarkButton(
         "Locate & track",

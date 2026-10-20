@@ -62,12 +62,12 @@ fun LocateScreen(onBack: () -> Unit) {
 
     Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp).fillMaxWidth().height(220.dp).clip(RoundedCornerShape(24.dp)).border(1.dp, dev.openvw.theme.Hairline, RoundedCornerShape(24.dp))) {
       OsmMap(
-        Store.parked.lat, Store.parked.lon, Modifier.matchParentSize(), zoom = 15.0, interactive = true, showMarker = true, mode = mode,
+        Store.parked.lat, Store.parked.lon, Modifier.matchParentSize(), zoom = if (Store.parkedKnown) 15.0 else 10.0, interactive = true, showMarker = Store.parkedKnown, mode = mode,
         onMarkerClick = { carCard = !carCard },
       )
       MapModeToggle(mode, Modifier.align(Alignment.TopEnd).padding(10.dp)) { mode = it }
       // tapping the car pin offers a hand-off to Google Maps
-      if (carCard) Row(
+      if (carCard && Store.parkedKnown) Row(
         Modifier.align(Alignment.BottomStart).padding(start = 10.dp, bottom = 10.dp, end = 60.dp)
           .shadow(8.dp, RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp)).background(Card).padding(start = 12.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -90,14 +90,17 @@ fun LocateScreen(onBack: () -> Unit) {
       Column(Modifier.weight(1f)) {
         Text("YOUR CAR · ${Store.vehicle.status.uppercase()}", style = label())
         Spacer(Modifier.height(2.dp))
-        Text(Store.parked.title, maxLines = 1, style = TextStyle(color = Ink, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold))
+        Text(if (Store.parkedKnown) Store.parked.title else "Location not available yet", maxLines = 1, style = TextStyle(color = Ink, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold))
         Text(
-          listOf(Store.parked.sub, sinceLabel(Store.parked.epoch)).filter { it.isNotEmpty() }.joinToString(" · "),
+          if (Store.parkedKnown) listOf(Store.parked.sub, sinceLabel(Store.parked.epoch)).filter { it.isNotEmpty() }.joinToString(" · ")
+          else "Shows after your next drive, once the engine is switched off",
           maxLines = 2, style = TextStyle(color = Muted, fontSize = 12.sp, lineHeight = 16.sp),
         )
       }
-      Spacer(Modifier.width(10.dp))
-      CircleButton(Ic.navArrow, bg = Field, border = Field) { GoogleMaps.pin(ctx, Store.parked.lat, Store.parked.lon) }
+      if (Store.parkedKnown) {
+        Spacer(Modifier.width(10.dp))
+        CircleButton(Ic.navArrow, bg = Field, border = Field) { GoogleMaps.pin(ctx, Store.parked.lat, Store.parked.lon) }
+      }
     }
 
     if (tab == 0) {
