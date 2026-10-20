@@ -432,7 +432,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
           id = tr.optString("id"), start = clock(st), end = clock(et),
           fromTitle = fT, fromSub = fS, toTitle = tT, toSub = tS,
           durMin = min, type = tr.optJSONArray("tags")?.optString(0)?.ifEmpty { null } ?: "Personal",
-          date = day(st), km = km, score = tr.optInt("driverScore"), epoch = st,
+          date = day(st), km = km, score = tr.optInt("driverScore"), epoch = st, endEpoch = et,
           drivingMin = tr.optInt("drivingTime"), idleMin = tr.optInt("idleTime"), haltMin = tr.optInt("haltTime"),
           maxSpeed = tr.optInt("maxSpeed"), avgSpeed = tr.optInt("speed"),
           startOdo = tr.optJSONObject("startOdometer")?.optDouble("value") ?: 0.0,
@@ -492,8 +492,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
   private suspend fun recomputePending() {
     val ctx = getApplication<Application>()
     val off = Store.events.filter { it.kind == "engine" && it.title == "Engine off" && it.lat != 0.0 }.maxByOrNull { it.epoch }
-    val newestTrip = Store.trips.firstOrNull()?.epoch ?: 0L
-    if (off == null || off.epoch <= newestTrip) { Store.pendingDrive = null; return }
+    // compare with when the newest trip ENDED (its engine-off), not when it started — a single
+    // trip can also span several engine on/off pairs (short stops), so allow a little slack
+    val newestEnd = Store.trips.maxOfOrNull { maxOf(it.endEpoch, it.epoch) } ?: 0L
+    if (off == null || off.epoch <= newestEnd + 120) { Store.pendingDrive = null; return }
     val on = Store.events.filter { it.kind == "engine" && it.title == "Engine on" && it.epoch <= off.epoch && it.lat != 0.0 }.maxByOrNull { it.epoch }
     val (tT, tS) = withContext(Dispatchers.IO) { Places.lookup(ctx, off.lat, off.lon) }
     val (fT, fS) = on?.let { withContext(Dispatchers.IO) { Places.lookup(ctx, it.lat, it.lon) } } ?: ("" to "")

@@ -133,6 +133,7 @@ data class Trip(
   val km: Double = 0.0,
   val score: Int = 0,
   val epoch: Long = 0,   // trip start, seconds
+  val endEpoch: Long = 0, // trip end, seconds
   val pending: Boolean = false,  // derived from engine on/off; full trip still finalizing on the server
   val drivingMin: Int = 0,
   val idleMin: Int = 0,
