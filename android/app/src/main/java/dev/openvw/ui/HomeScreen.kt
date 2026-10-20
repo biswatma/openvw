@@ -182,15 +182,6 @@ fun HomeScreen(onGo: (Screen) -> Unit, onOwner: () -> Unit, playKey: Int, onShow
     }
   }
 
-  val quick: @Composable () -> Unit = {
-    // quick actions
-    Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-      QuickTile("Locate", Ic.navArrow, 15.dp, 2.2f, accent = true, Modifier.weight(1f)) { onGo(Screen.LOCATE) }
-      QuickTile("Trips", Ic.route + " M4 19a2 2 0 1 0 4 0 2 2 0 1 0-4 0z M16 5a2 2 0 1 0 4 0 2 2 0 1 0-4 0z", 16.dp, 2f, accent = false, Modifier.weight(1f)) { onGo(Screen.TRIPS) }
-      QuickTile("Service", Ic.service, 17.dp, 1.9f, accent = false, Modifier.weight(1f)) { onGo(Screen.LOCATE) }
-      QuickTile("Documents", "M7 3.5h7l4 4V20.5H7z M14 3.5v4h4M9.5 12h6M9.5 15.5h6", 16.dp, 2f, accent = false, Modifier.weight(1f)) { onGo(Screen.VEHICLE) }
-    }
-  }
   val cluster: @Composable () -> Unit = {
     // ---- live cluster ----
     SectionHeader("Live cluster", Modifier.padding(top = 28.dp, bottom = 12.dp)) { Row(verticalAlignment = Alignment.CenterVertically) {
@@ -296,13 +287,13 @@ fun HomeScreen(onGo: (Screen) -> Unit, onOwner: () -> Unit, playKey: Int, onShow
 
   if (!wide) {
     Column(Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
-      header(); hero(); odometer(); quick(); cluster(); recent(); parked()
+      header(); hero(); odometer(); cluster(); recent(); parked()
     }
   } else {
     Column(Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
       header()
       Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.Top) {
-        Column(Modifier.weight(1f)) { hero(); odometer(); quick(); parked() }
+        Column(Modifier.weight(1f)) { hero(); odometer(); parked() }
         Column(Modifier.weight(1f)) { cluster(); recent() }
       }
     }
@@ -323,20 +314,6 @@ private fun HeroBar(label: String, value: String, frac: Float, color: Color) {
   }
 }
 
-@Composable
-private fun QuickTile(label: String, icon: String, iconSize: androidx.compose.ui.unit.Dp, stroke: Float, accent: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-  Column(
-    modifier.height(76.dp).card(22.dp).clickable(onClick = onClick),
-    horizontalAlignment = Alignment.CenterHorizontally,
-    verticalArrangement = Arrangement.Center,
-  ) {
-    Box(Modifier.size(32.dp).clip(RoundedCornerShape(16.dp)).background(if (accent) Accent else Chip), contentAlignment = Alignment.Center) {
-      VIcon(icon, size = iconSize, color = if (accent) Card else Ink, stroke = stroke)
-    }
-    Spacer(Modifier.height(6.dp))
-    Text(label, maxLines = 1, style = TextStyle(color = Ink, fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
-  }
-}
 
 @Composable
 private fun StatusPill(status: String) {

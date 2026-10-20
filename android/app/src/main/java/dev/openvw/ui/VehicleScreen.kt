@@ -116,12 +116,7 @@ fun VehicleScreen(
         onPrice = onPrice,
       )
 
-      Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Box(Modifier.weight(1f).height(52.dp).clip(RoundedCornerShape(99.dp)).background(Card).border(1.dp, dev.openvw.theme.Hairline, RoundedCornerShape(99.dp)), contentAlignment = Alignment.Center) {
-          Text("Documents", style = TextStyle(color = Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold))
-        }
-        DarkButton("We Connect", Modifier.weight(1f).height(52.dp))
-      }
+      DarkButton("We Connect", Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp).fillMaxWidth().height(52.dp))
     } else {
       // owner
       Row(Modifier.padding(16.dp).fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(Ink).padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
