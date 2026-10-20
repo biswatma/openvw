@@ -159,6 +159,29 @@ fun HomeScreen(onGo: (Screen) -> Unit, onOwner: () -> Unit, playKey: Int, onShow
       }
     }
   }
+  val odometer: @Composable () -> Unit = {
+    val odo = Store.telemetry.odometerKm
+    Row(
+      Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp).card(24.dp).padding(horizontal = 18.dp, vertical = 16.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Box(Modifier.size(46.dp).clip(RoundedCornerShape(23.dp)).background(Field), contentAlignment = Alignment.Center) {
+        // odometer / gauge glyph
+        VIcon("M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z M12 13l4-3 M7.5 17.5h9", size = 22.dp, color = Accent, stroke = 1.9f)
+      }
+      Spacer(Modifier.width(14.dp))
+      Column(Modifier.weight(1f)) {
+        Text("ODOMETER", style = label())
+        Spacer(Modifier.height(3.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+          Text(if (odo != null) "%,d".format(odo) else "--", style = TextStyle(color = Ink, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.8).sp).merge(Tnum))
+          Text("  km", style = TextStyle(color = Muted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+        }
+      }
+      Text("Total distance", style = TextStyle(color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
+    }
+  }
+
   val quick: @Composable () -> Unit = {
     // quick actions
     Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -273,13 +296,13 @@ fun HomeScreen(onGo: (Screen) -> Unit, onOwner: () -> Unit, playKey: Int, onShow
 
   if (!wide) {
     Column(Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
-      header(); hero(); quick(); cluster(); recent(); parked()
+      header(); hero(); odometer(); quick(); cluster(); recent(); parked()
     }
   } else {
     Column(Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
       header()
       Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.Top) {
-        Column(Modifier.weight(1f)) { hero(); quick(); parked() }
+        Column(Modifier.weight(1f)) { hero(); odometer(); quick(); parked() }
         Column(Modifier.weight(1f)) { cluster(); recent() }
       }
     }
