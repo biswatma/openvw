@@ -51,4 +51,7 @@ val Track get() = tok(0xFFEFEDE8, 0xFF34343A)
 val Track2 get() = tok(0xFFE8E6E0, 0xFF3A3A40)
 val TickMinor get() = tok(0xFFCFCCC4, 0xFF55555C)
 val MapBg get() = tok(0xFFECEAE4, 0xFF26262B)
+val DrumWell get() = tok(0xFFEDEBE5, 0xFF121215)   // recessed odometer housing
+val DrumBg get() = tok(0xFFFFFFFF, 0xFF2A2A30)      // a number wheel face
+val DrumBorder get() = tok(0xFFE2DFD8, 0xFF2E2E35)  // well border
 val Timeline get() = tok(0xFFD6D3CB, 0xFF3A3A40) // trip route connector line

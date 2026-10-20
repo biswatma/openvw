@@ -13,11 +13,13 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
@@ -59,9 +61,12 @@ import dev.openvw.theme.Ink
 import dev.openvw.theme.Line
 import dev.openvw.theme.LineSoft
 import dev.openvw.theme.Muted
-import dev.openvw.theme.Timeline
 import dev.openvw.theme.MapBg
 import dev.openvw.theme.Field
+import dev.openvw.theme.DrumWell
+import dev.openvw.theme.DrumBg
+import dev.openvw.theme.DrumBorder
+import dev.openvw.theme.Timeline
 import kotlin.math.roundToInt
 
 @Composable
@@ -161,24 +166,62 @@ fun HomeScreen(onGo: (Screen) -> Unit, onOwner: () -> Unit, playKey: Int, onShow
   }
   val odometer: @Composable () -> Unit = {
     val odo = Store.telemetry.odometerKm
+    // roll the drums up from 0 to the real reading, using the same self-test timing as the cluster
+    val odoK = easeOutPublic((tv - 0.15f) / 0.85f)
     Row(
-      Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp).card(24.dp).padding(horizontal = 18.dp, vertical = 16.dp),
+      Modifier
+        .padding(horizontal = 16.dp)
+        .padding(top = 14.dp)
+        .fillMaxWidth()
+        .card(24.dp)
+        .padding(start = 18.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
       verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-      Box(Modifier.size(46.dp).clip(RoundedCornerShape(23.dp)).background(Field), contentAlignment = Alignment.Center) {
-        // odometer / gauge glyph
-        VIcon("M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z M12 13l4-3 M7.5 17.5h9", size = 22.dp, color = Accent, stroke = 1.9f)
+      Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text("ODOMETER", style = TextStyle(color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.6.sp))
+        Text("Total distance", style = TextStyle(color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
       }
-      Spacer(Modifier.width(14.dp))
-      Column(Modifier.weight(1f)) {
-        Text("ODOMETER", style = label())
-        Spacer(Modifier.height(3.dp))
-        Row(verticalAlignment = Alignment.Bottom) {
-          Text(if (odo != null) "%,d".format(odo) else "--", style = TextStyle(color = Ink, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.8).sp).merge(Tnum))
-          Text("  km", style = TextStyle(color = Muted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+      if (odo == null) {
+        Text("-- km", style = TextStyle(color = Ink, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold).merge(Tnum))
+      } else {
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Row(
+            Modifier
+              .clip(RoundedCornerShape(10.dp))
+              .background(DrumWell)
+              .border(1.dp, DrumBorder, RoundedCornerShape(10.dp))
+              .padding(horizontal = 4.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+          ) {
+            for (i in 5 downTo 0) {
+              val p = Math.pow(10.0, i.toDouble()).toLong()
+              val targetDigit = ((odo / p) % 10).toInt()
+              val extraSpins = if (i == 0) 10f else 0f
+              val animatedPos = (targetDigit + extraSpins) * odoK
+              val pos = if (tv >= 1f) targetDigit.toFloat() else animatedPos
+              val units = i == 0
+              DigitDrum(
+                pos = pos,
+                bg = if (units) Ink else DrumBg,
+                fg = if (units) Card else Ink,
+              )
+            }
+          }
+          Text(
+            "km",
+            style = TextStyle(
+              color = Muted,
+              fontSize = 13.sp,
+              fontWeight = FontWeight.Bold,
+            ),
+          )
         }
       }
-      Text("Total distance", style = TextStyle(color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
     }
   }
 
@@ -314,6 +357,92 @@ private fun HeroBar(label: String, value: String, frac: Float, color: Color) {
   }
 }
 
+
+@Composable
+private fun DigitDrum(
+  pos: Float,
+  bg: Color,
+  fg: Color,
+  modifier: Modifier = Modifier,
+) {
+  val itemH = 38.dp
+  val itemW = 26.dp
+  val norm = ((pos % 10f) + 10f) % 10f
+  val curD = norm.toInt() % 10
+  val nextD = (curD + 1) % 10
+  val frac = norm - norm.toInt()
+
+  Box(
+    modifier
+      .width(itemW)
+      .height(itemH)
+      .clip(RoundedCornerShape(6.dp))
+      .background(bg),
+    contentAlignment = Alignment.Center,
+  ) {
+    // Current digit (slides up as frac increases)
+    Box(
+      Modifier
+        .fillMaxSize()
+        .offset(y = -(frac * itemH.value).dp),
+      contentAlignment = Alignment.Center,
+    ) {
+      Text(
+        curD.toString(),
+        style = TextStyle(
+          color = fg,
+          fontSize = 24.sp,
+          fontWeight = FontWeight.Bold,
+          textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        ).merge(Tnum),
+      )
+    }
+
+    // Next digit (slides in from bottom when rolling)
+    if (frac > 0.001f) {
+      Box(
+        Modifier
+          .fillMaxSize()
+          .offset(y = ((1f - frac) * itemH.value).dp),
+        contentAlignment = Alignment.Center,
+      ) {
+        Text(
+          nextD.toString(),
+          style = TextStyle(
+            color = fg,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+          ).merge(Tnum),
+        )
+      }
+    }
+
+    // Cylindrical curvature gloss:
+    // Convex mechanical roller lighting with top and bottom shadows
+    Box(
+      Modifier
+        .matchParentSize()
+        .background(
+          Brush.verticalGradient(
+            0.0f to Color(0x35000000),
+            0.18f to Color(0x0A000000),
+            0.35f to Color.Transparent,
+            0.65f to Color.Transparent,
+            0.82f to Color(0x0A000000),
+            1.0f to Color(0x38000000),
+          )
+        )
+    )
+
+    // Subtle edge highlight to give 3D tumbler wheel separation
+    Box(
+      Modifier
+        .matchParentSize()
+        .border(0.5.dp, Color(0x18000000), RoundedCornerShape(6.dp))
+    )
+  }
+}
 
 @Composable
 private fun StatusPill(status: String) {
