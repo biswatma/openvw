@@ -19,6 +19,7 @@ object Store {
   var events by mutableStateOf(emptyList<CarEvent>())
   var parked by mutableStateOf(Parked())
   val parkedKnown get() = parked.epoch > 0L   // false until a real telematics event sets the location
+  var pendingDrive by mutableStateOf<Trip?>(null)  // last drive from engine on/off, until the full trip finalizes
   var alertSetup by mutableStateOf(AlertSetup())
   var paintPick by mutableStateOf("")         // "" = from account colour, else a CarLook.Paint name
   var fuelPrice by mutableStateOf(0.0)        // ₹/L entered by the owner; 0 = default (Bengaluru)

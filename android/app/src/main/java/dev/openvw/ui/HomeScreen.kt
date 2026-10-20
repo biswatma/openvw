@@ -214,19 +214,28 @@ fun HomeScreen(onGo: (Screen) -> Unit, onOwner: () -> Unit, playKey: Int, onShow
         VIcon(Ic.chevronR, size = 16.dp, color = Ink, stroke = 2f)
       }
     }
-    Store.trips.firstOrNull()?.let { tr -> Column(Modifier.padding(horizontal = 16.dp).card(24.dp).padding(18.dp)) {
+    listOfNotNull(Store.trips.firstOrNull(), Store.pendingDrive).maxByOrNull { it.epoch }?.let { tr -> Column(Modifier.padding(horizontal = 16.dp).card(24.dp).padding(18.dp)) {
       Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Row(verticalAlignment = Alignment.Bottom) {
           Text(tr.durMin.toString(), style = TextStyle(color = Ink, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold).merge(Tnum))
           Spacer(Modifier.width(8.dp))
           Text(if (tr.km > 0) "min · %.1f km · %s".format(tr.km, tr.date) else "min · ${tr.date}", style = TextStyle(color = Muted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
         }
-        Box(Modifier.clip(RoundedCornerShape(99.dp)).background(Chip).border(1.dp, Border, RoundedCornerShape(99.dp)).padding(horizontal = 12.dp, vertical = 7.dp)) {
-          Text(tr.type, style = TextStyle(color = Ink, fontSize = 12.sp, fontWeight = FontWeight.Bold))
-        }
+        if (tr.pending)
+          Box(Modifier.clip(RoundedCornerShape(99.dp)).background(dev.openvw.theme.AmberSoftBg).padding(horizontal = 12.dp, vertical = 7.dp)) {
+            Text("Finalizing…", style = TextStyle(color = dev.openvw.theme.AmberDark, fontSize = 12.sp, fontWeight = FontWeight.Bold))
+          }
+        else
+          Box(Modifier.clip(RoundedCornerShape(99.dp)).background(Chip).border(1.dp, Border, RoundedCornerShape(99.dp)).padding(horizontal = 12.dp, vertical = 7.dp)) {
+            Text(tr.type, style = TextStyle(color = Ink, fontSize = 12.sp, fontWeight = FontWeight.Bold))
+          }
       }
       Spacer(Modifier.height(14.dp))
       TripRoute(tr.start, tr.end, tr.fromTitle, tr.fromSub, tr.toTitle, tr.toSub)
+      if (tr.pending) {
+        Spacer(Modifier.height(10.dp))
+        Text("Full trip stats arrive a little after you park.", style = TextStyle(color = Muted, fontSize = 11.sp))
+      }
     } }
   }
   val parked: @Composable () -> Unit = {

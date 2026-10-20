@@ -476,6 +476,26 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
       } ?: emptyList()
       Store.alertSetup = AlertSetup(fences, trig)
     }
+
+    runCatching { recomputePending() }
+  }
+
+  /** A drive that has ended (latest engine-off) but isn't in trip history yet — built from events. */
+  private suspend fun recomputePending() {
+    val ctx = getApplication<Application>()
+    val off = Store.events.filter { it.kind == "engine" && it.title == "Engine off" && it.lat != 0.0 }.maxByOrNull { it.epoch }
+    val newestTrip = Store.trips.firstOrNull()?.epoch ?: 0L
+    if (off == null || off.epoch <= newestTrip) { Store.pendingDrive = null; return }
+    val on = Store.events.filter { it.kind == "engine" && it.title == "Engine on" && it.epoch <= off.epoch && it.lat != 0.0 }.maxByOrNull { it.epoch }
+    val (tT, tS) = withContext(Dispatchers.IO) { Places.lookup(ctx, off.lat, off.lon) }
+    val (fT, fS) = on?.let { withContext(Dispatchers.IO) { Places.lookup(ctx, it.lat, it.lon) } } ?: ("" to "")
+    val startE = on?.epoch ?: off.epoch
+    Store.pendingDrive = Trip(
+      id = "pending-${off.epoch}", start = clock(startE), end = clock(off.epoch),
+      fromTitle = fT, fromSub = fS, toTitle = tT, toSub = tS,
+      durMin = (((off.epoch - startE) + 30) / 60).toInt().coerceAtLeast(0),
+      type = "Personal", date = day(startE), epoch = startE, pending = true,
+    )
   }
 
   private fun clock(epoch: Long) = SimpleDateFormat("hh:mm a", Locale.ENGLISH).format(Date(epoch * 1000))

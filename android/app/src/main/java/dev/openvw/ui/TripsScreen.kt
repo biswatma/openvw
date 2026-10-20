@@ -51,7 +51,8 @@ fun TripsScreen(onBack: () -> Unit) {
     }
 
     val d = Store.drive
-    if (tab == 0 && Store.trips.isEmpty()) {
+    val pending = Store.pendingDrive?.takeIf { p -> Store.trips.none { it.epoch == p.epoch } }
+    if (tab == 0 && Store.trips.isEmpty() && pending == null) {
       Column(Modifier.fillMaxWidth().padding(top = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.size(92.dp).clip(RoundedCornerShape(46.dp)).background(Card).border(1.dp, Border, RoundedCornerShape(46.dp)), contentAlignment = Alignment.Center) {
           VIcon(Ic.route + " M4 19a2 2 0 1 0 4 0 2 2 0 1 0-4 0z M16 5a2 2 0 1 0 4 0 2 2 0 1 0-4 0z", size = 40.dp, color = Ink, stroke = 1.4f)
@@ -62,13 +63,33 @@ fun TripsScreen(onBack: () -> Unit) {
       }
     } else if (tab == 0) {
       val live = d.tripCount > 0
-      Row(
+      if (Store.trips.isNotEmpty()) Row(
         Modifier.padding(16.dp).fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Ink).padding(18.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
       ) {
         DarkStat("This week", (if (live) d.weekTrips else Store.trips.size).toString(), null, Modifier.weight(1f))
         DarkStat("Time on road", (if (live) d.weekMin else Store.trips.sumOf { it.durMin }).toString(), "min", Modifier.weight(1f))
         if (live) DarkStat("Distance", "%.0f".format(d.weekKm), "km", Modifier.weight(1f))
+      }
+      if (pending != null) {
+        Text("LATEST DRIVE", style = TextStyle(color = Muted, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.8.sp), modifier = Modifier.padding(start = 20.dp, top = 8.dp, bottom = 10.dp))
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp)) {
+          Column(Modifier.card(24.dp).padding(18.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+              Row(verticalAlignment = Alignment.Bottom) {
+                Text(pending.durMin.toString(), style = TextStyle(color = Ink, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold).merge(Tnum))
+                Text(" min", style = TextStyle(color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
+              }
+              Box(Modifier.clip(RoundedCornerShape(99.dp)).background(dev.openvw.theme.AmberSoftBg).padding(horizontal = 12.dp, vertical = 7.dp)) {
+                Text("Finalizing…", style = TextStyle(color = dev.openvw.theme.AmberDark, fontSize = 12.sp, fontWeight = FontWeight.Bold))
+              }
+            }
+            Spacer(Modifier.height(14.dp))
+            TripRoute(pending.start, pending.end, pending.fromTitle, pending.fromSub, pending.toTitle, pending.toSub)
+            Spacer(Modifier.height(10.dp))
+            Text("Full trip stats arrive a little after you park.", style = TextStyle(color = Muted, fontSize = 11.sp))
+          }
+        }
       }
       Store.trips.groupBy { it.date }.forEach { (date, trips) ->
         Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {

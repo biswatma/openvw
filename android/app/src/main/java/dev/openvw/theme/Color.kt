@@ -40,6 +40,8 @@ val GreenSoftBg get() = tok(0xFFE3F5EC, 0xFF11372A)
 val Red = Color(0xFFE5484D)
 val RedSoftBg get() = tok(0xFFFDEBEC, 0xFF3A1F22)
 val Amber = Color(0xFFD98A00)
+val AmberDark get() = tok(0xFF9A6200, 0xFFE0A33A)
+val AmberSoftBg get() = tok(0xFFFBF0DA, 0xFF33280F)
 
 val Field get() = tok(0xFFF7F6F2, 0xFF26262B)
 val Chip get() = tok(0xFFF5F4F0, 0xFF26262B)
