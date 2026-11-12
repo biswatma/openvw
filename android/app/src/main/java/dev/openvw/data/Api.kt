@@ -79,18 +79,20 @@ object Api {
       null, Crypto.GEN, Crypto.GEN)
   }
 
-  suspend fun registerUser(mobile: String, installationID: Int, token: String): JSONObject = withContext(Dispatchers.IO) {
+  /** Login step 1 — sends the OTP by SMS ([type] "Mobile") or by e-mail ([type] "Email"). */
+  suspend fun registerUser(id: String, type: String, installationID: Int, token: String): JSONObject = withContext(Dispatchers.IO) {
+    val email = type == Session.EMAIL
     val p = JSONObject()
-      .put("brand", "VW").put("emailID", Crypto.encHex("", Crypto.DATA)).put("installationID", installationID)
-      .put("mobileNo", Crypto.encHex(mobile, Crypto.DATA)).put("sixDigitOTP", true).put("type", "Mobile")
+      .put("brand", "VW").put("emailID", Crypto.encHex(if (email) id else "", Crypto.DATA)).put("installationID", installationID)
+      .put("mobileNo", Crypto.encHex(if (email) "" else id, Crypto.DATA)).put("sixDigitOTP", true).put("type", type)
     val (code, text) = req("POST", REG + "Registration/1.0/registerUser", p.toString(), token)
     json(text).put("_status", code)
   }
 
   suspend fun verifyLoginOTP(otp: String, s: Session): JSONObject = withContext(Dispatchers.IO) {
     val p = JSONObject()
-      .put("otp", otp).put("installationID", s.installationID).put("type", "Mobile").put("brand", "VW")
-      .put("type_Detail", Crypto.encHex(s.mobile, Crypto.DATA)).put("loginID", s.loginId)
+      .put("otp", otp).put("installationID", s.installationID).put("type", s.loginType).put("brand", "VW")
+      .put("type_Detail", Crypto.encHex(s.otpTarget, Crypto.DATA)).put("loginID", s.loginId)
       .put("sixDigitOTP", true).put("userID", s.userId).put("signStamp", System.currentTimeMillis())
     encCall(REG + "UserLogin/1.0/verifyLoginOTPEncryption", p, s.token, Crypto.GEN, Crypto.GEN)
   }

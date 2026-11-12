@@ -65,6 +65,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
   init {
     phone = session.mobile
+    email = session.email
+    useEmail = session.loginType == Session.EMAIL
     Store.privacy = session.privacy
     Store.paintPick = session.paintPick
     Store.fuelPrice = session.fuelPrice.toDouble()
@@ -86,13 +88,32 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
   /** Owner's average petrol price in ₹/L (0 = back to the default). */
   fun setFuelPrice(p: Double) { session.fuelPrice = p.toFloat(); Store.fuelPrice = p }
 
+  var email by mutableStateOf("")
+  var useEmail by mutableStateOf(false)  // login screen: e-mail OTP instead of SMS OTP
+
+  /** Switch the login form between mobile number and e-mail. */
+  fun setLoginMode(email: Boolean) { useEmail = email; message = null }
+
   fun startLogin(p: String) {
     val mob = p.filter { it.isDigit() }
     if (mob.length != 10) { message = "Enter a 10-digit mobile number"; return }
+    session.mobile = mob
+    sendOtp(Session.MOBILE, mob)
+  }
+
+  /** E-mail OTP login — reaches the account the official app created for Google sign-in. */
+  fun startEmailLogin(e: String) {
+    val addr = e.trim()
+    if (!android.util.Patterns.EMAIL_ADDRESS.matcher(addr).matches()) { message = "Enter a valid e-mail address"; return }
+    session.email = addr
+    sendOtp(Session.EMAIL, addr)
+  }
+
+  private fun sendOtp(type: String, id: String) {
     busy = true; message = null
     viewModelScope.launch {
       try {
-        session.mobile = mob
+        session.loginType = type
         val inst = Api.appInstallation(session.deviceID)
         session.installationID = inst.optInt("installationID", session.installationID)
         if (session.installationID == 0) { fail("Could not register device"); return@launch }
@@ -100,7 +121,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val tok = auth.optString("accessToken")
         if (tok.isEmpty()) { fail("Could not reach Volkswagen (try again)"); return@launch }
         session.token = tok; session.refreshToken = auth.optString("refreshToken")
-        val reg = Api.registerUser(mob, session.installationID, tok)
+        val reg = Api.registerUser(id, type, session.installationID, tok)
         if (!reg.optBoolean("isSuccessful")) { fail(reg.optString("message", "Could not send OTP")); return@launch }
         session.loginId = reg.optInt("loginId"); session.userId = reg.optInt("userId")
         busy = false; phase = Phase.OTP
@@ -113,7 +134,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
   fun resend() {
     viewModelScope.launch {
-      runCatching { Api.registerUser(session.mobile, session.installationID, session.token) }
+      runCatching { Api.registerUser(session.otpTarget, session.loginType, session.installationID, session.token) }
       message = "Code re-sent"
     }
   }
@@ -129,7 +150,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         session.verified = true
         if (r.has("signStamp")) session.signStamp = r.optLong("signStamp")
         busy = false; phase = Phase.LOADING
-        loadData(); phase = Phase.READY; poll()
+        loadData()
+        if (session.vin.isEmpty()) {
+          // signed in, but this account has no car — don't fall through to the sample car
+          session.clearAuth(); phase = Phase.LOGIN
+          message = if (session.loginType == Session.EMAIL) "No car is linked to this e-mail. Try your mobile number."
+            else "No car is linked to this number. If you use Google sign-in in the official app, sign in with that e-mail."
+          return@launch
+        }
+        phase = Phase.READY; poll()
       } catch (e: Exception) { fail(e.message ?: "Network error") }
     }
   }
@@ -264,8 +293,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val v = if (arr != null && arr.length() > 0) arr.optJSONObject(0) else null
     if (v != null) {
       val vin = v.optString("vinNo").ifEmpty { v.optString("vin") }
+      if (vin != session.vin) { session.carId = ""; session.teleToken = "" } // different car/account: re-resolve
       session.vin = vin
-      session.telePhone = Crypto.decOrSelf(v.optString("telematicsMobileNo")).ifEmpty { "+91" + session.mobile }
+      session.telePhone = Crypto.decOrSelf(v.optString("telematicsMobileNo")).ifEmpty { session.fallbackPhone }
       Store.vehicle = VehicleInfo(
         variant = v.optString("variant").ifEmpty { v.optString("telematics_Variant").ifEmpty { "Taigun GT Plus" } },
         model = v.optString("model").ifEmpty { Repo.vehicle.model },
@@ -282,7 +312,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
       Store.owner = Owner(
         name = nm,
         email = Crypto.decOrSelf(prof.optString("primaryMailID")),
-        mobile = session.telePhone.ifEmpty { "+91" + session.mobile },
+        mobile = session.telePhone.ifEmpty { session.fallbackPhone },
         address = Crypto.decOrSelf(prof.optString("communicationAddress")),
       )
     }
@@ -296,7 +326,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
     if (session.cerenceToken.isEmpty()) return
     if (session.teleToken.isEmpty()) {
-      val phone = session.telePhone.ifEmpty { "+91" + session.mobile }
+      val phone = session.telePhone.ifEmpty { session.fallbackPhone }
       val tt = Api.telematicsToken(session.cerenceToken, phone, session.vin)
       val tok = tt.optJSONObject("loginInfo")?.optJSONObject("tokenInfo")?.optString("accessToken")
         ?: tt.optString("accessToken")

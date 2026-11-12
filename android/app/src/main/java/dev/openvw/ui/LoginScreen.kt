@@ -56,15 +56,23 @@ fun LoginScreen(vm: AppViewModel) {
     Text("Welcome to\nOpenVW", style = TextStyle(color = Ink, fontSize = 40.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1.4).sp, lineHeight = 44.sp))
     Spacer(Modifier.height(10.dp))
     Text(
-      if (vm.phase == Phase.OTP) "Enter the 6-digit code sent to your phone by SMS."
-      else "Sign in with your mobile number to connect your Volkswagen.",
+      when {
+        vm.phase == Phase.OTP && vm.useEmail -> "Enter the 6-digit code sent to your e-mail."
+        vm.phase == Phase.OTP -> "Enter the 6-digit code sent to your phone by SMS."
+        vm.useEmail -> "Sign in with the e-mail you use for Google sign-in in the official app."
+        else -> "Sign in with your mobile number to connect your Volkswagen."
+      },
       style = TextStyle(color = Muted, fontSize = 15.sp, lineHeight = 21.sp),
     )
 
     Spacer(Modifier.weight(1f))
 
     BackHandler(enabled = vm.phase == Phase.OTP) { vm.backToPhone() }
-    if (vm.phase == Phase.OTP) OtpStep(vm) else PhoneStep(vm)
+    if (vm.phase == Phase.OTP) OtpStep(vm) else {
+      ModeToggle(vm)
+      Spacer(Modifier.height(16.dp))
+      if (vm.useEmail) EmailStep(vm) else PhoneStep(vm)
+    }
 
     vm.message?.let { Text(it, style = TextStyle(color = if (it == "Code re-sent") Muted else Red, fontSize = 13.sp, fontWeight = FontWeight.SemiBold), modifier = Modifier.padding(top = 12.dp)) }
     Spacer(Modifier.height(28.dp))
@@ -94,6 +102,48 @@ private fun PhoneStep(vm: AppViewModel) {
   }
   Spacer(Modifier.height(20.dp))
   CtaButton(if (vm.busy) "Sending OTP…" else "Send OTP", enabled = !vm.busy && p.length == 10) { vm.startLogin(p) }
+}
+
+/** Mobile (SMS OTP) vs e-mail (e-mail OTP — the account behind Google sign-in). */
+@Composable
+private fun ModeToggle(vm: AppViewModel) {
+  Row(
+    Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(14.dp)).background(Card)
+      .border(1.dp, Border, RoundedCornerShape(14.dp)).padding(4.dp),
+  ) {
+    listOf(false to "Mobile", true to "E-mail").forEach { (email, text) ->
+      val on = vm.useEmail == email
+      Box(
+        Modifier.weight(1f).fillMaxSize().clip(RoundedCornerShape(10.dp)).background(if (on) Ink else Card)
+          .clickable(enabled = !vm.busy) { vm.setLoginMode(email) },
+        contentAlignment = Alignment.Center,
+      ) { Text(text, style = TextStyle(color = if (on) Card else Muted, fontSize = 14.sp, fontWeight = FontWeight.Bold)) }
+    }
+  }
+}
+
+@Composable
+private fun EmailStep(vm: AppViewModel) {
+  var e by remember { mutableStateOf(vm.email) }
+  val valid = android.util.Patterns.EMAIL_ADDRESS.matcher(e.trim()).matches()
+  Text("E-MAIL", style = label())
+  Spacer(Modifier.height(8.dp))
+  Box(
+    Modifier.fillMaxWidth().height(60.dp).clip(RoundedCornerShape(16.dp)).background(Card).border(1.dp, Border, RoundedCornerShape(16.dp)).padding(horizontal = 16.dp),
+    contentAlignment = Alignment.CenterStart,
+  ) {
+    BasicTextField(
+      value = e,
+      onValueChange = { e = it.filterNot { c -> c.isWhitespace() }.take(80) },
+      textStyle = TextStyle(color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold),
+      singleLine = true,
+      keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+      modifier = Modifier.fillMaxWidth(),
+      decorationBox = { inner -> if (e.isEmpty()) Text("you@gmail.com", style = TextStyle(color = Muted, fontSize = 18.sp)); inner() },
+    )
+  }
+  Spacer(Modifier.height(20.dp))
+  CtaButton(if (vm.busy) "Sending code…" else "Send code", enabled = !vm.busy && valid) { vm.startEmailLogin(e) }
 }
 
 @Composable
