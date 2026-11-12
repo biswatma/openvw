@@ -50,6 +50,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
   var message by mutableStateOf<String?>(null); private set
   var busy by mutableStateOf(false); private set
   var phone by mutableStateOf("")
+  var email by mutableStateOf("")
+  var useEmail by mutableStateOf(false)  // login screen: e-mail OTP instead of SMS OTP
 
   private val loadLock = Mutex()
   private var lastFull = 0L
@@ -87,9 +89,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
   /** Owner's average petrol price in ₹/L (0 = back to the default). */
   fun setFuelPrice(p: Double) { session.fuelPrice = p.toFloat(); Store.fuelPrice = p }
-
-  var email by mutableStateOf("")
-  var useEmail by mutableStateOf(false)  // login screen: e-mail OTP instead of SMS OTP
 
   /** Switch the login form between mobile number and e-mail. */
   fun setLoginMode(email: Boolean) { useEmail = email; message = null }
