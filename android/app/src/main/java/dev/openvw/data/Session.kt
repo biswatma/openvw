@@ -13,6 +13,13 @@ class Session(context: Context) {
   private fun put(k: String, v: Int) = sp.edit().putInt(k, v).apply()
 
   var mobile: String get() = s("mobile"); set(v) = put("mobile", v)
+  var email: String get() = s("email"); set(v) = put("email", v)
+  /** How the owner signs in: MOBILE (SMS OTP) or EMAIL (e-mail OTP — the account behind Google sign-in). */
+  var loginType: String get() = s("loginType", MOBILE); set(v) = put("loginType", v)
+  /** Login mobile as "+91…" ("" for e-mail login, where the vehicle record supplies the telematics number). */
+  val fallbackPhone: String get() = if (loginType == MOBILE && mobile.isNotEmpty()) "+91$mobile" else ""
+  /** The mobile number or e-mail the OTP was sent to. */
+  val otpTarget: String get() = if (loginType == EMAIL) email else mobile
   var deviceID: String
     get() {
       var d = s("deviceID")
@@ -40,6 +47,8 @@ class Session(context: Context) {
   var privacy: Boolean get() = sp.getBoolean("privacy", false); set(v) = sp.edit().putBoolean("privacy", v).apply()
 
   val loggedIn: Boolean get() = verified && installationID != 0 && loginId != 0
+
+  companion object { const val MOBILE = "Mobile"; const val EMAIL = "Email" }
 
   fun clearAuth() {
     verified = false; token = ""; crmToken = ""; teleToken = ""; cerenceToken = ""
